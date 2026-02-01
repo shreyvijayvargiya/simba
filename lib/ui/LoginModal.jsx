@@ -12,7 +12,7 @@ import {
 	getUserCookie,
 	removeUserCookie,
 } from "../utils/cookies";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import SignupModal from "./SignupModal";
 
 const LoginModal = ({ isOpen, onClose }) => {

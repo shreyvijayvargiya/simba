@@ -48,7 +48,7 @@ const IconsSelectorDropdown = ({ onSelect, onClose }) => {
 						<button
 							key={name}
 							onClick={() => onSelect(name)}
-							className="p-2 aspect-square flex items-center justify-center rounded-lg border border-zinc-100 hover:border-blue-500 hover:bg-blue-50 text-zinc-600 hover:text-blue-600 transition-all group"
+							className="p-2 aspect-square flex items-center justify-center rounded-xl border border-zinc-100 hover:border-blue-500 hover:bg-blue-50 text-zinc-600 hover:text-blue-600 transition-all group"
 							title={name}
 						>
 							<Icon size={18} />

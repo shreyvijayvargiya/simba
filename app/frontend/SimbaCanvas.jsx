@@ -212,14 +212,14 @@ const SelectionToolbar = ({ element, onUpdate, onDelete, onClose }) => {
 						<input
 							autoFocus
 							placeholder="Image URL..."
-							className="flex-1 text-xs px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-lg outline-none focus:border-blue-500"
+							className="flex-1 text-xs px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl outline-none focus:border-blue-500"
 							value={tempSrc}
 							onChange={(e) => setTempSrc(e.target.value)}
 							onKeyDown={(e) => e.key === "Enter" && onUpdate({ src: tempSrc })}
 						/>
 						<button
 							onClick={() => fileInputRef.current?.click()}
-							className="p-2 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200"
+							className="p-2 bg-zinc-100 text-zinc-600 rounded-xl hover:bg-zinc-200"
 							title="Upload from computer"
 						>
 							<Upload size={14} />
@@ -234,7 +234,7 @@ const SelectionToolbar = ({ element, onUpdate, onDelete, onClose }) => {
 					</div>
 
 					{imagePreview && (
-						<div className="relative w-full aspect-video rounded-lg overflow-hidden bg-zinc-100 border border-zinc-200">
+						<div className="relative w-full aspect-video rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200">
 							<img
 								src={imagePreview}
 								alt="Preview"
@@ -261,7 +261,7 @@ const SelectionToolbar = ({ element, onUpdate, onDelete, onClose }) => {
 						</button>
 						<button
 							onClick={() => onUpdate({ src: tempSrc })}
-							className="px-3 py-1.5 bg-zinc-900 text-white text-xs font-bold rounded-lg hover:bg-zinc-800 flex items-center gap-1"
+							className="px-3 py-1.5 bg-zinc-900 text-white text-xs font-bold rounded-xl hover:bg-zinc-800 flex items-center gap-1"
 						>
 							<Check size={14} /> Update Image
 						</button>
