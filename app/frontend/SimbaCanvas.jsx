@@ -425,7 +425,14 @@ const CanvasControls = ({
 	);
 };
 
-const PageFrame = ({ slug, html, applyTheme, activeTool, dimensions }) => {
+const PageFrame = ({
+	slug,
+	html,
+	applyTheme,
+	activeTool,
+	dimensions,
+	isGenerating,
+}) => {
 	const iframeRef = useRef(null);
 	const lastHtmlRef = useRef("");
 
@@ -448,26 +455,38 @@ const PageFrame = ({ slug, html, applyTheme, activeTool, dimensions }) => {
 	}, [activeTool]);
 
 	return (
-		<iframe
-			ref={iframeRef}
-			title={slug}
-			style={{
-				width: dimensions.width,
-				height: dimensions.height,
-				borderRadius: dimensions.radius,
-			}}
-			className="w-full h-full border-none"
-			onLoad={() => {
-				iframeRef.current?.contentWindow?.postMessage(
-					{ type: "simba-set-tool", tool: activeTool },
-					"*",
-				);
-			}}
-		/>
+		<div className="relative w-full h-full overflow-hidden rounded-[inherit]">
+			<iframe
+				ref={iframeRef}
+				title={slug}
+				style={{
+					width: dimensions.width,
+					height: dimensions.height,
+					borderRadius: dimensions.radius,
+				}}
+				className="w-full h-full border-none"
+				onLoad={() => {
+					iframeRef.current?.contentWindow?.postMessage(
+						{ type: "simba-set-tool", tool: activeTool },
+						"*",
+					);
+				}}
+			/>
+			{isGenerating && (
+				<div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] flex items-center justify-center z-50 transition-all duration-300">
+					<div className="flex flex-col items-center gap-2">
+						<div className="w-6 h-6 border-2 border-zinc-200 border-t-zinc-900 rounded-full animate-spin" />
+						<span className="text-[10px] font-black text-zinc-900 uppercase tracking-tighter">
+							Updating...
+						</span>
+					</div>
+				</div>
+			)}
+		</div>
 	);
 };
 
-const SimbaCanvas = ({ pages, setPages, isGenerating }) => {
+const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 	const [currentScale, setCurrentScale] = useState(0.7);
 	const [viewMode, setViewMode] = useState("mobile");
 	const [activeTheme, setActiveTheme] = useState(THEMES[0]);
@@ -1008,6 +1027,7 @@ const SimbaCanvas = ({ pages, setPages, isGenerating }) => {
 												applyTheme={applyThemeToHtml}
 												activeTool={activeTool}
 												dimensions={frameDimensions}
+												isGenerating={editingSlug === slug}
 											/>
 
 											{/* Hover Overlay */}

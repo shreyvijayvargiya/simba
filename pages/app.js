@@ -75,6 +75,7 @@ const AIDesignCreatorPage = () => {
 		setPages,
 		meta,
 		isGenerating,
+		editingSlug,
 		usage,
 		logs: currentLogs,
 	} = useSimba();
@@ -262,6 +263,7 @@ const AIDesignCreatorPage = () => {
 								pages={pages}
 								setPages={setPages}
 								isGenerating={isGenerating}
+								editingSlug={editingSlug}
 							/>
 						) : (
 							<div className="h-full w-full flex flex-col items-center justify-center text-zinc-300 gap-4">
