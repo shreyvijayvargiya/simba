@@ -46,10 +46,27 @@ const AIDesignCreatorPage = () => {
 		},
 	]);
 	const [showRightSidebar, setShowRightSidebar] = useState(true);
+	const [showLeftSidebar, setShowLeftSidebar] = useState(true);
 	const [agents, setAgents] = useState([
 		{ id: "chat-1", name: "Chat 1", logs: [], input: "" },
 	]);
 	const [activeAgentId, setActiveAgentId] = useState("chat-1");
+
+	// Keyboard Shortcuts
+	useEffect(() => {
+		const handleKeyDownGlobal = (e) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "b") {
+				e.preventDefault();
+				setShowLeftSidebar((prev) => !prev);
+			}
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "l") {
+				e.preventDefault();
+				setShowRightSidebar((prev) => !prev);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDownGlobal);
+		return () => window.removeEventListener("keydown", handleKeyDownGlobal);
+	}, []);
 	const {
 		generate,
 		edit,
@@ -140,91 +157,104 @@ const AIDesignCreatorPage = () => {
 			</Head>
 			<div className="h-screen bg-white flex flex-col overflow-hidden">
 				<SimbaNavbar />
-				<main className="flex-1 flex overflow-hidden">
-					<div className="w-80 min-w-80 border-r border-zinc-100 flex flex-col bg-white overflow-hidden">
-						<div className="p-4 border-b border-zinc-50 bg-zinc-50/30 flex items-center justify-between">
-							<h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
-								Project Pages
-							</h2>
-							<button
-								onClick={() => {
-									const newSlug = `page-${Object.keys(pages).length + 1}`;
-									setPages({ ...pages, [newSlug]: "<div>New Page</div>" });
-								}}
-								className="p-1.5 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-all"
-								title="Add New Page"
+				<main className="flex-1 flex overflow-hidden relative">
+					<AnimatePresence>
+						{showLeftSidebar && (
+							<motion.div
+								initial={{ x: "-100%" }}
+								animate={{ x: 0 }}
+								exit={{ x: "-100%" }}
+								transition={{ type: "spring", damping: 25, stiffness: 200 }}
+								className="w-80 min-w-80 border-r border-zinc-100 flex flex-col bg-white overflow-hidden"
 							>
-								<Plus size={14} />
-							</button>
-						</div>
-
-						<div className="flex-1 overflow-y-auto p-2 space-y-1 hidescrollbar">
-							{Object.keys(pages).length === 0 ? (
-								<div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-									<div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4">
-										<Layout size={24} className="text-zinc-300" />
-									</div>
-									<p className="text-[10px] font-bold uppercase tracking-tight text-zinc-400">
-										No pages created
-									</p>
-								</div>
-							) : (
-								Object.keys(pages).map((slug) => (
+								<div className="px-4 py-2 border-b border-zinc-50 bg-zinc-50/30 flex items-center justify-between">
+									<h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
+										Project Pages
+									</h2>
 									<button
-										key={slug}
-										className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 text-left transition-all group border border-transparent hover:border-zinc-100"
-									>
-										<div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-[10px] font-black text-zinc-400 group-hover:bg-white group-hover:text-zinc-900 transition-colors shadow-sm">
-											{slug === "/" ? "H" : slug.charAt(0).toUpperCase()}
-										</div>
-										<div className="flex-1 min-w-0">
-											<p className="text-xs font-bold text-zinc-900 truncate">
-												{slug === "/" ? "Home" : slug}
-											</p>
-											<p className="text-[10px] text-zinc-400 font-medium truncate">
-												{slug === "/" ? "landing" : slug}
-											</p>
-										</div>
-										<Circle
-											size={6}
-											className="text-zinc-200 fill-zinc-200 group-hover:text-emerald-400 group-hover:fill-emerald-400"
-										/>
-									</button>
-								))
-							)}
-						</div>
-
-						{/* Credits and Footer */}
-						<div className="p-4 border-t border-zinc-50 bg-zinc-50/20">
-							<div className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm">
-								<div className="flex items-center justify-between mb-3">
-									<span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-										Simba Credits
-									</span>
-									<Zap size={12} className="text-amber-500 fill-amber-500" />
-								</div>
-								<div className="flex items-baseline gap-1">
-									<span className="text-2xl font-black text-zinc-900">
-										{((usage?.total || 0) / 1000).toFixed(1)}
-									</span>
-									<span className="text-xs font-bold text-zinc-400">
-										Credits
-									</span>
-								</div>
-								<div className="mt-3 w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
-									<div
-										className="bg-zinc-900 h-full transition-all duration-500"
-										style={{
-											width: `${Math.min(((usage?.total || 0) / 10000) * 100, 100)}%`,
+										onClick={() => {
+											const newSlug = `page-${Object.keys(pages).length + 1}`;
+											setPages({ ...pages, [newSlug]: "<div>New Page</div>" });
 										}}
-									/>
+										className="p-1.5 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-all"
+										title="Add New Page"
+									>
+										<Plus size={14} />
+									</button>
 								</div>
-								<p className="mt-2 text-[9px] text-zinc-400 font-bold uppercase tracking-tight">
-									{usage?.total?.toLocaleString() || 0} / 10,000 tokens used
-								</p>
-							</div>
-						</div>
-					</div>
+
+								<div className="flex-1 overflow-y-auto p-2 space-y-1 hidescrollbar">
+									{Object.keys(pages).length === 0 ? (
+										<div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+											<div className="w-12 h-12 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4">
+												<Layout size={24} className="text-zinc-300" />
+											</div>
+											<p className="text-[10px] font-bold uppercase tracking-tight text-zinc-400">
+												No pages created
+											</p>
+										</div>
+									) : (
+										Object.keys(pages).map((slug) => (
+											<button
+												key={slug}
+												className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 text-left transition-all group border border-transparent hover:border-zinc-100"
+											>
+												<div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-[10px] font-black text-zinc-400 group-hover:bg-white group-hover:text-zinc-900 transition-colors shadow-sm">
+													{slug === "/" ? "H" : slug.charAt(0).toUpperCase()}
+												</div>
+												<div className="flex-1 min-w-0">
+													<p className="text-xs font-bold text-zinc-900 truncate">
+														{slug === "/" ? "Home" : slug}
+													</p>
+													<p className="text-[10px] text-zinc-400 font-medium truncate">
+														{slug === "/" ? "landing" : slug}
+													</p>
+												</div>
+												<Circle
+													size={6}
+													className="text-zinc-200 fill-zinc-200 group-hover:text-emerald-400 group-hover:fill-emerald-400"
+												/>
+											</button>
+										))
+									)}
+								</div>
+
+								{/* Credits and Footer */}
+								<div className="p-4 border-t border-zinc-50 bg-zinc-50/20">
+									<div className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm">
+										<div className="flex items-center justify-between mb-3">
+											<span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+												Simba Credits
+											</span>
+											<Zap
+												size={12}
+												className="text-amber-500 fill-amber-500"
+											/>
+										</div>
+										<div className="flex items-baseline gap-1">
+											<span className="text-2xl font-black text-zinc-900">
+												{((usage?.total || 0) / 1000).toFixed(1)}
+											</span>
+											<span className="text-xs font-bold text-zinc-400">
+												Credits
+											</span>
+										</div>
+										<div className="mt-3 w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+											<div
+												className="bg-zinc-900 h-full transition-all duration-500"
+												style={{
+													width: `${Math.min(((usage?.total || 0) / 10000) * 100, 100)}%`,
+												}}
+											/>
+										</div>
+										<p className="mt-2 text-[9px] text-zinc-400 font-bold uppercase tracking-tight">
+											{usage?.total?.toLocaleString() || 0} / 10,000 tokens used
+										</p>
+									</div>
+								</div>
+							</motion.div>
+						)}
+					</AnimatePresence>
 					{/* Main Canvas Area (Now on the left) */}
 					<div className="flex-1 relative overflow-hidden bg-zinc-50">
 						{isGenerating || Object.keys(pages).length > 0 ? (
@@ -250,16 +280,17 @@ const AIDesignCreatorPage = () => {
 						)}
 					</div>
 
-					<AnimatePresence mode="wait">
+					<AnimatePresence>
 						{showRightSidebar && (
 							<motion.div
 								initial={{ x: "100%" }}
 								animate={{ x: 0 }}
 								exit={{ x: "100%" }}
+								transition={{ type: "spring", damping: 25, stiffness: 200 }}
 								className="w-96 border-l border-zinc-200 flex flex-col bg-white overflow-hidden shadow-2xl relative z-30"
 							>
 								{/* Agent Tabs */}
-								<div className="flex items-center bg-zinc-50/50 border-b border-zinc-100 h-11">
+								<div className="flex items-center bg-zinc-50/50 border-b border-zinc-100 h-8">
 									<div className="flex-1 flex items-center overflow-x-auto hidescrollbar h-full">
 										{agents.map((agent) => (
 											<div
