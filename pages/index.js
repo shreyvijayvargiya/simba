@@ -16,6 +16,8 @@ import useSimba from "../lib/hooks/useSimba";
 import { onAuthStateChange } from "../lib/api/auth";
 import SimbaNavbar from "../app/components/SimbaNavbar";
 import { DESIGN_SYSTEMS } from "./app";
+import { createApp } from "../lib/api/kixiApps";
+import { decrementCredits } from "../lib/api/simbaCredits";
 
 const HomePage = () => {
 	const [input, setInput] = useState("");
@@ -27,6 +29,7 @@ const HomePage = () => {
 	const [selectedDesignSystem, setSelectedDesignSystem] = useState(
 		DESIGN_SYSTEMS[0],
 	);
+	const [showLoginModal, setShowLoginModal] = useState(false);
 
 	useEffect(() => {
 		const unsub = onAuthStateChange((u) => {
@@ -40,9 +43,7 @@ const HomePage = () => {
 		if (!input.trim() || isGenerating) return;
 
 		if (!user) {
-			// Instead of manual modal state, the navbar will handle login
-			// But for handleSend we still need auth check
-			toast.error("Please sign in first");
+			setShowLoginModal(true);
 			return;
 		}
 
@@ -50,7 +51,23 @@ const HomePage = () => {
 		setInput("");
 
 		try {
-			await generate(prompt, selectedDesignSystem);
+			const result = await generate(prompt, selectedDesignSystem);
+			if (result?.usage?.total) {
+				try {
+					await decrementCredits(user.uid, result.usage.total);
+				} catch (e) {
+					console.error("Failed to update credits:", e);
+				}
+			}
+			if (result?.pages && Object.keys(result.pages).length > 0) {
+				const appId = await createApp(user.uid, {
+					name: prompt.slice(0, 80) || "Untitled App",
+					pages: result.pages,
+					meta: result.meta ?? null,
+					designSystem: selectedDesignSystem,
+				});
+				router.push(`/app/${appId}`);
+			}
 		} catch (error) {
 			console.error("Simba Error:", error);
 			toast.error("Failed to process request");
@@ -83,7 +100,10 @@ const HomePage = () => {
 			</Head>
 
 			<div className="min-h-screen bg-white flex flex-col overflow-hidden font-sans">
-				<SimbaNavbar />
+				<SimbaNavbar
+					loginModalOpen={showLoginModal}
+					setLoginModalOpen={setShowLoginModal}
+				/>
 
 				<main className="flex-1 relative flex flex-col overflow-hidden">
 					<div className="flex-1 flex flex-col items-center justify-center p-6 relative">

@@ -24,11 +24,18 @@ import {
 	Plus,
 	Circle,
 	Sparkles,
+	Save,
+	FolderOpen,
+	ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import useSimba from "../lib/hooks/useSimba";
 import SimbaNavbar from "../app/components/SimbaNavbar";
+import { updateApp, listApps } from "../lib/api/kixiApps";
+import { getCredits, decrementCredits } from "../lib/api/simbaCredits";
+import { onAuthStateChange } from "../lib/api/auth";
+import { useRouter } from "next/router";
 
 const SimbaCanvas = dynamic(() => import("../app/frontend/SimbaCanvas"), {
 	ssr: false,
@@ -87,7 +94,14 @@ export const DESIGN_SYSTEMS = [
 	},
 ];
 
-const AIDesignCreatorPage = () => {
+const AIDesignCreatorPage = ({
+	initialPages,
+	initialMeta,
+	initialDesignSystem,
+	appId,
+	userId,
+}) => {
+	const router = useRouter();
 	const textareaRef = useRef();
 	const messagesEndRef = useRef(null);
 	const [messages, setMessages] = useState([
@@ -104,9 +118,16 @@ const AIDesignCreatorPage = () => {
 	const [activeTool, setActiveTool] = useState("hand");
 	const [isCreatingNewApp, setIsCreatingNewApp] = useState(false);
 	const [newAppPrompt, setNewAppPrompt] = useState("");
-	const [designSystem, setDesignSystem] = useState(DESIGN_SYSTEMS[0]);
+	const [designSystem, setDesignSystem] = useState(
+		initialDesignSystem || DESIGN_SYSTEMS[0],
+	);
 	const [selectedElement, setSelectedElement] = useState(null);
 	const [history, setHistory] = useState([]);
+	const [isSaving, setIsSaving] = useState(false);
+	const [currentUser, setCurrentUser] = useState(null);
+	const [credits, setCredits] = useState(null);
+	const [userApps, setUserApps] = useState([]);
+	const [loadingApps, setLoadingApps] = useState(false);
 
 	const addToHistory = (currentPages) => {
 		setHistory((prev) => [currentPages, ...prev].slice(0, 5));
@@ -297,6 +318,24 @@ const AIDesignCreatorPage = () => {
 		window.addEventListener("keydown", handleKeyDownGlobal);
 		return () => window.removeEventListener("keydown", handleKeyDownGlobal);
 	}, []);
+	const currentUserId = userId ?? currentUser?.uid;
+
+	const initialState =
+		initialPages && Object.keys(initialPages).length > 0
+			? { pages: initialPages, meta: initialMeta ?? null }
+			: undefined;
+	const handleUsage = async (usageData) => {
+		if (!currentUserId || !usageData?.total) return;
+		try {
+			await decrementCredits(currentUserId, usageData.total);
+			setCredits((c) => (c !== null ? Math.max(0, c - usageData.total) : null));
+		} catch (e) {
+			console.error("Failed to update credits:", e);
+		}
+	};
+	const handleDesignSystemChange = (updates) => {
+		setDesignSystem((prev) => (prev ? { ...prev, ...updates } : updates));
+	};
 	const {
 		generate,
 		edit,
@@ -309,20 +348,84 @@ const AIDesignCreatorPage = () => {
 		editingSlug,
 		usage,
 		logs: currentLogs,
-	} = useSimba();
+	} = useSimba(initialState, {
+		onUsage: handleUsage,
+		onDesignSystemChange: handleDesignSystemChange,
+	});
 
 	const [selectedSlug, setSelectedSlug] = useState(null);
+	const generatingAgentIdRef = useRef(null);
 
-	// Sync hook logs to active agent
+	// Auth: when not passed userId (e.g. /app route), get current user
 	useEffect(() => {
-		if (currentLogs.length > 0) {
+		if (userId) return;
+		const unsub = onAuthStateChange((u) => setCurrentUser(u ?? null));
+		return () => unsub?.();
+	}, [userId]);
+
+	// Fetch Simba credits from Firestore when user is set
+	useEffect(() => {
+		if (!currentUserId) {
+			setCredits(null);
+			return;
+		}
+		let cancelled = false;
+		getCredits(currentUserId).then((c) => {
+			if (!cancelled) setCredits(c);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [currentUserId]);
+
+	// Fetch user projects/apps when user is set
+	useEffect(() => {
+		if (!currentUserId) {
+			setUserApps([]);
+			return;
+		}
+		let cancelled = false;
+		setLoadingApps(true);
+		listApps(currentUserId)
+			.then((apps) => {
+				if (!cancelled) setUserApps(apps);
+			})
+			.catch(() => {
+				if (!cancelled) setUserApps([]);
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingApps(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [currentUserId]);
+
+	// Default selected page to first page when pages load or selection is invalid
+	useEffect(() => {
+		const slugs = Object.keys(pages);
+		if (slugs.length > 0 && (!selectedSlug || !pages[selectedSlug])) {
+			setSelectedSlug(slugs[0]);
+		}
+	}, [pages, selectedSlug]);
+
+	// Sync hook logs only to the agent that started the current generation
+	useEffect(() => {
+		if (currentLogs.length > 0 && generatingAgentIdRef.current) {
 			setAgents((prev) =>
 				prev.map((a) =>
-					a.id === activeAgentId ? { ...a, logs: currentLogs } : a,
+					a.id === generatingAgentIdRef.current
+						? { ...a, logs: currentLogs }
+						: a,
 				),
 			);
 		}
-	}, [currentLogs, activeAgentId]);
+	}, [currentLogs]);
+
+	// Clear generating agent ref when generation ends
+	useEffect(() => {
+		if (!isGenerating) generatingAgentIdRef.current = null;
+	}, [isGenerating]);
 
 	const activeAgent = agents.find((a) => a.id === activeAgentId) || agents[0];
 
@@ -331,16 +434,22 @@ const AIDesignCreatorPage = () => {
 		if (!input.trim() || isGenerating) return;
 
 		const prompt = input.trim();
+		generatingAgentIdRef.current = activeAgentId;
 		// Clear input for this agent
 		setAgents((prev) =>
 			prev.map((a) => (a.id === activeAgentId ? { ...a, input: "" } : a)),
 		);
 
+		const targetSlug =
+			selectedSlug && pages[selectedSlug]
+				? selectedSlug
+				: Object.keys(pages)[0] || null;
+
 		try {
 			if (Object.keys(pages).length === 0) {
 				await generate(prompt, designSystem);
 			} else {
-				await agentEdit(prompt, pages, designSystem);
+				await agentEdit(prompt, pages, designSystem, targetSlug);
 			}
 		} catch (error) {
 			console.error("Simba Error:", error);
@@ -357,6 +466,28 @@ const AIDesignCreatorPage = () => {
 		} catch (error) {
 			console.error("New App Error:", error);
 			toast.error("Failed to create new app");
+		}
+	};
+
+	const handleSave = async () => {
+		if (!appId || !userId) return;
+		setIsSaving(true);
+		try {
+			await updateApp(userId, appId, {
+				pages,
+				meta,
+				designSystem,
+			});
+			toast.success("Project saved");
+			// Refresh projects list so name/order stays in sync
+			listApps(userId)
+				.then(setUserApps)
+				.catch(() => {});
+		} catch (error) {
+			console.error("Save failed:", error);
+			toast.error("Failed to save project");
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
@@ -402,7 +533,25 @@ const AIDesignCreatorPage = () => {
 				<meta name="description" content="Create stunning designs with AI" />
 			</Head>
 			<div className="h-screen bg-white flex flex-col overflow-hidden">
-				<SimbaNavbar />
+				<div className="flex items-center border-b border-zinc-100 bg-white">
+					<div className="flex-1 min-w-0">
+						<SimbaNavbar />
+					</div>
+					{appId && userId && (
+						<button
+							onClick={handleSave}
+							disabled={isSaving || Object.keys(pages).length === 0}
+							className="flex items-center gap-2 px-4 py-2 mr-4 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 disabled:opacity-50 transition-all"
+						>
+							{isSaving ? (
+								<Loader2 size={16} className="animate-spin" />
+							) : (
+								<Save size={16} />
+							)}
+							Save
+						</button>
+					)}
+				</div>
 				<main className="flex-1 flex overflow-hidden relative">
 					<AnimatePresence>
 						{showLeftSidebar && (
@@ -413,18 +562,77 @@ const AIDesignCreatorPage = () => {
 								transition={{ type: "spring", damping: 25, stiffness: 200 }}
 								className="w-80 min-w-80 border-r border-zinc-100 flex flex-col bg-white overflow-hidden"
 							>
+								{/* My Projects */}
+								{currentUserId && (
+									<div className="border-b border-zinc-100 bg-zinc-50/30">
+										<div className="px-4 py-2 flex items-center justify-between">
+											<h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
+												My Projects
+											</h2>
+											<button
+												type="button"
+												onClick={() => router.push("/")}
+												className="p-1.5 hover:bg-zinc-200 rounded-xl text-zinc-600 transition-all"
+												title="New project"
+											>
+												<Plus size={14} />
+											</button>
+										</div>
+										<div className="px-2 pb-2 max-h-[180px] overflow-y-auto hidescrollbar space-y-0.5">
+											{loadingApps ? (
+												<div className="flex items-center justify-center py-6">
+													<Loader2
+														size={16}
+														className="animate-spin text-zinc-400"
+													/>
+												</div>
+											) : userApps.length === 0 ? (
+												<p className="text-[10px] text-zinc-400 px-2 py-4 text-center">
+													No projects yet. Create one on the home page.
+												</p>
+											) : (
+												userApps.map((app) => (
+													<button
+														key={app.id}
+														type="button"
+														onClick={() => router.push(`/app/${app.id}`)}
+														className={`w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors border ${
+															appId === app.id
+																? "bg-white border-zinc-200 shadow-sm ring-1 ring-zinc-200"
+																: "border-transparent hover:bg-white/80 hover:border-zinc-100"
+														}`}
+													>
+														<div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0">
+															<FolderOpen size={14} className="text-zinc-500" />
+														</div>
+														<div className="flex-1 min-w-0">
+															<p className="text-xs font-bold text-zinc-900 truncate">
+																{app.name}
+															</p>
+															<p className="text-[10px] text-zinc-400 truncate">
+																{app.id}
+															</p>
+														</div>
+														<ChevronRight
+															size={14}
+															className={`shrink-0 ${
+																appId === app.id
+																	? "text-zinc-700"
+																	: "text-zinc-300"
+															}`}
+														/>
+													</button>
+												))
+											)}
+										</div>
+									</div>
+								)}
+
 								<div className="px-4 py-2 border-b border-zinc-50 bg-zinc-50/30 flex items-center justify-between">
 									<h2 className="text-xs font-black uppercase tracking-widest text-zinc-400">
 										Project Pages
 									</h2>
 									<div className="flex items-center gap-1">
-										<button
-											onClick={() => setIsCreatingNewApp(true)}
-											className="p-1.5 hover:bg-zinc-100 rounded-xl text-zinc-600 transition-all"
-											title="Create New App"
-										>
-											<Sparkles size={14} />
-										</button>
 										<button
 											onClick={() => {
 												const newSlug = `page-${Object.keys(pages).length + 1}`;
@@ -497,7 +705,13 @@ const AIDesignCreatorPage = () => {
 										Object.keys(pages).map((slug) => (
 											<button
 												key={slug}
-												className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 text-left transition-all group border border-transparent hover:border-zinc-100"
+												type="button"
+												onClick={() => setSelectedSlug(slug)}
+												className={`w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-50 text-left transition-colors group border ${
+													selectedSlug === slug
+														? "border-blue-400 bg-blue-50/50 ring-1 ring-blue-200"
+														: "border-transparent hover:border-zinc-100"
+												}`}
 											>
 												<div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-[10px] font-black text-zinc-400 group-hover:bg-white group-hover:text-zinc-900 transition-colors shadow-sm">
 													{slug === "/" ? "H" : slug.charAt(0).toUpperCase()}
@@ -512,7 +726,11 @@ const AIDesignCreatorPage = () => {
 												</div>
 												<Circle
 													size={6}
-													className="text-zinc-200 fill-zinc-200 group-hover:text-emerald-400 group-hover:fill-emerald-400"
+													className={`shrink-0 ${
+														selectedSlug === slug
+															? "text-blue-400 fill-blue-400"
+															: "text-zinc-200 fill-zinc-200 group-hover:text-emerald-400 group-hover:fill-emerald-400"
+													}`}
 												/>
 											</button>
 										))
@@ -533,7 +751,7 @@ const AIDesignCreatorPage = () => {
 										</div>
 										<div className="flex items-baseline gap-1">
 											<span className="text-2xl font-black text-zinc-900">
-												{((usage?.total || 0) / 1000).toFixed(1)}
+												{credits !== null ? (credits / 1000).toFixed(1) : "—"}
 											</span>
 											<span className="text-xs font-bold text-zinc-400">
 												Credits
@@ -543,12 +761,17 @@ const AIDesignCreatorPage = () => {
 											<div
 												className="bg-zinc-900 h-full transition-all duration-500"
 												style={{
-													width: `${Math.min(((usage?.total || 0) / 10000) * 100, 100)}%`,
+													width: `${Math.min(
+														credits !== null ? (credits / 10000) * 100 : 0,
+														100,
+													)}%`,
 												}}
 											/>
 										</div>
 										<p className="mt-2 text-[9px] text-zinc-400 font-bold uppercase tracking-tight">
-											{usage?.total?.toLocaleString() || 0} / 10,000 tokens used
+											{credits !== null
+												? `${credits.toLocaleString()} / 10,000 remaining`
+												: "Sign in to see credits"}
 										</p>
 									</div>
 								</div>
@@ -673,6 +896,17 @@ const AIDesignCreatorPage = () => {
 											</button>
 										</div>
 
+										{selectedSlug && Object.keys(pages).length > 0 && (
+											<div className="px-3 py-1.5 border-b border-zinc-100 bg-zinc-50/30">
+												<p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+													Editing page:{" "}
+													<span className="text-zinc-700 normal-case">
+														{selectedSlug === "/" ? "Home" : selectedSlug}
+													</span>
+												</p>
+											</div>
+										)}
+
 										<div className="flex-1 overflow-y-auto p-4 space-y-2 hidescrollbar bg-white">
 											{activeAgent.logs.length === 0 && (
 												<div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
@@ -761,4 +995,7 @@ const AIDesignCreatorPage = () => {
 	);
 };
 
-export default AIDesignCreatorPage;
+export { AIDesignCreatorPage };
+export default function AppPage() {
+	return <AIDesignCreatorPage />;
+}

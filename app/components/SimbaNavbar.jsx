@@ -4,10 +4,17 @@ import { onAuthStateChange } from "../../lib/api/auth";
 import LoginModal from "../../lib/ui/LoginModal";
 import { useRouter } from "next/router";
 
-const SimbaNavbar = () => {
+const SimbaNavbar = ({
+	loginModalOpen,
+	setLoginModalOpen: setLoginModalOpenProp,
+}) => {
 	const [user, setUser] = useState(null);
-	const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+	const [internalLoginOpen, setInternalLoginOpen] = useState(false);
 	const router = useRouter();
+	const isLoginModalOpen = setLoginModalOpenProp
+		? loginModalOpen
+		: internalLoginOpen;
+	const setIsLoginModalOpen = setLoginModalOpenProp || setInternalLoginOpen;
 
 	useEffect(() => {
 		const unsubscribe = onAuthStateChange((currentUser) => {

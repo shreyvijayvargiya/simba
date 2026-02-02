@@ -398,87 +398,8 @@ const CanvasControls = ({
 								</div>
 							</div>
 
-							<div className="grid grid-cols-2 gap-4">
-								{/* Fonts */}
-								<div className="space-y-2">
-									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
-										Font Family
-									</label>
-									<select
-										value={designSystem.font}
-										onChange={(e) =>
-											updateDesignSystem({ font: e.target.value })
-										}
-										className="w-full text-[10px] p-2 bg-zinc-50 border border-zinc-100 rounded-xl focus:outline-none"
-									>
-										{FONTS.map((f) => (
-											<option key={f} value={f}>
-												{f}
-											</option>
-										))}
-									</select>
-								</div>
-
-								{/* Radius */}
-								<div className="space-y-2">
-									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
-										Corner Radius
-									</label>
-									<div className="flex bg-zinc-50 p-1 rounded-xl border border-zinc-100">
-										{RADII.map((r) => (
-											<button
-												key={r.name}
-												onClick={() => updateDesignSystem({ radius: r.value })}
-												className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.radius === r.value ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
-											>
-												{r.name.charAt(0)}
-											</button>
-										))}
-									</div>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-2 gap-4">
-								{/* Mode */}
-								<div className="space-y-2">
-									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
-										Theme Mode
-									</label>
-									<div className="flex bg-zinc-50 p-1 rounded-xl border border-zinc-100">
-										<button
-											onClick={() => updateDesignSystem({ mode: "light" })}
-											className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.mode === "light" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
-										>
-											Light
-										</button>
-										<button
-											onClick={() => updateDesignSystem({ mode: "dark" })}
-											className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.mode === "dark" ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
-										>
-											Dark
-										</button>
-									</div>
-								</div>
-
-								{/* Stroke */}
-								<div className="space-y-2">
-									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
-										Stroke Width
-									</label>
-									<div className="flex bg-zinc-50 p-1 rounded-xl border border-zinc-100">
-										{STROKES.map((s) => (
-											<button
-												key={s.name}
-												onClick={() => updateDesignSystem({ stroke: s.value })}
-												className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.stroke === s.value ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
-											>
-												{s.name.charAt(0)}
-											</button>
-										))}
-									</div>
-								</div>
-							</div>
-
+						
+							
 							{/* Design Variants */}
 							<div className="space-y-2 pt-2 border-t border-zinc-100">
 								<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
@@ -612,17 +533,12 @@ const PageFrame = ({
 	isGenerating,
 }) => {
 	const iframeRef = useRef(null);
-	const lastHtmlRef = useRef("");
 
 	useEffect(() => {
-		if (iframeRef.current) {
-			const themeHtml = applyThemeToHtml(designSystem, html, slug);
-			// Only update srcDoc if the HTML is fundamentally different (not a local DOM edit)
-			if (lastHtmlRef.current !== themeHtml) {
-				iframeRef.current.srcdoc = themeHtml;
-				lastHtmlRef.current = themeHtml;
-			}
-		}
+		if (!iframeRef.current || !html) return;
+		const themeHtml = applyThemeToHtml(designSystem, html, slug);
+		// Always apply theme so color/design system changes and HTML updates are reflected
+		iframeRef.current.srcdoc = themeHtml;
 	}, [html, slug, designSystem, applyThemeToHtml]);
 
 	useEffect(() => {
