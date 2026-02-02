@@ -459,9 +459,7 @@ const Sidebar = ({
 
 	const sidebarContent = (isMobile = false) => (
 		<div className={`flex flex-col h-full ${isMobile ? "p-3" : "py-6 px-1"}`}>
-			<div
-				className="space-y-2 hidescrollbar overflow-y-auto"
-			>
+			<div className="space-y-2 hidescrollbar overflow-y-auto">
 				{/* Project Dropdown / Logo */}
 				<div className="relative project-dropdown mb-2">
 					<motion.button
@@ -473,7 +471,7 @@ const Sidebar = ({
 						className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-colors"
 					>
 						<RocketIcon className="w-3.5 h-3.5" />
-						<span className="text-xs font-medium">SAAS Starter Admin</span>
+						<span className="text-xs font-medium">Kixi Admin</span>
 						{isMobile && (
 							<ChevronDown
 								className={`w-4 h-4 ml-auto text-zinc-400 transition-transform ${

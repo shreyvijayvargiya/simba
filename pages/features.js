@@ -73,7 +73,7 @@ const FeaturesPage = () => {
 				<title>Features - YourApp</title>
 				<meta
 					name="description"
-					content="Discover all the features included in our SaaS starter template."
+					content="Discover all the features included in our Kixi template."
 				/>
 			</Head>
 			<div className="min-h-screen flex flex-col">
@@ -86,8 +86,8 @@ const FeaturesPage = () => {
 								Everything You Need to Launch
 							</h1>
 							<p className="text-lg text-zinc-600 max-w-2xl mx-auto">
-								Our SaaS starter template includes all the essential features to
-								get your product to market faster.
+								Our Kixi template includes all the essential features to get
+								your product to market faster.
 							</p>
 						</div>
 
@@ -130,4 +130,3 @@ const FeaturesPage = () => {
 };
 
 export default FeaturesPage;
-

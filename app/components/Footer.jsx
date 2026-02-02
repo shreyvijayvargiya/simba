@@ -68,8 +68,8 @@ const Footer = () => {
 								</span>
 							</Link>
 							<p className="text-zinc-500 max-w-sm leading-relaxed">
-								The high-performance SaaS starter for modern developers.
-								Build, launch, and scale your next idea with confidence.
+								The high-performance Kixi for modern developers. Build, launch,
+								and scale your next idea with confidence.
 							</p>
 						</div>
 
@@ -165,7 +165,9 @@ const Footer = () => {
 
 					<div className="flex items-center gap-2">
 						<div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-						<span className="text-sm font-medium text-zinc-600">All Systems Operational</span>
+						<span className="text-sm font-medium text-zinc-600">
+							All Systems Operational
+						</span>
 					</div>
 				</div>
 			</div>

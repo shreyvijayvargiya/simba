@@ -43,6 +43,41 @@ const THEMES = [
 	{ name: "Sky", color: "#0ea5e9" },
 ];
 
+const FONTS = [
+	"Plus Jakarta Sans",
+	"Inter",
+	"Roboto",
+	"Playfair Display",
+	"Mono",
+];
+
+const RADII = [
+	{ name: "None", value: "0px" },
+	{ name: "Small", value: "4px" },
+	{ name: "Medium", value: "12px" },
+	{ name: "Large", value: "24px" },
+	{ name: "Full", value: "9999px" },
+];
+
+const STROKES = [
+	{ name: "Thin", value: "1px" },
+	{ name: "Normal", value: "2px" },
+	{ name: "Thick", value: "4px" },
+];
+
+const DESIGN_VARIANTS = [
+	"Brutal",
+	"Minimal",
+	"Cyber",
+	"Gaia",
+	"Joy",
+	"Modern",
+	"Kids",
+	"Sports",
+	"Finance",
+	"Health",
+];
+
 const COLORS = [
 	{ name: "Zinc", value: "#18181b" },
 	{ name: "White", value: "#ffffff" },
@@ -308,33 +343,175 @@ const CanvasControls = ({
 	pages,
 	viewMode,
 	setViewMode,
-	activeTheme,
-	setTheme,
+	designSystem,
+	setDesignSystem,
 	activeTool,
 	setActiveTool,
+	selectedSlug,
+	onGenerateVariant,
 }) => {
 	const { zoomIn, zoomOut, resetTransform } = useControls();
-	const [showThemes, setShowThemes] = useState(false);
+	const [showDesignSystem, setShowDesignSystem] = useState(false);
+
+	const updateDesignSystem = (updates) => {
+		setDesignSystem((prev) => ({ ...prev, ...updates }));
+	};
 
 	return (
 		<div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50 pointer-events-auto scale-110">
 			<AnimatePresence>
-				{showThemes && (
+				{showDesignSystem && (
 					<motion.div
-						initial={{ opacity: 0, y: 10 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: 10 }}
-						className="bg-white/90 backdrop-blur-md border border-zinc-200 rounded-2xl p-2 flex gap-2 shadow-xl mb-2"
+						initial={{ opacity: 0, y: 10, scale: 0.95 }}
+						animate={{ opacity: 1, y: 0, scale: 1 }}
+						exit={{ opacity: 0, y: 10, scale: 0.95 }}
+						className="bg-white/95 backdrop-blur-md border border-zinc-200 rounded-3xl p-4 shadow-2xl mb-4 w-[400px] space-y-4"
 					>
-						{THEMES.map((t) => (
-							<button
-								key={t.name}
-								onClick={() => setTheme(t)}
-								className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${activeTheme.name === t.name ? "border-zinc-900" : "border-transparent"}`}
-								style={{ backgroundColor: t.color }}
-								title={t.name}
-							/>
-						))}
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+									Design System
+								</span>
+								<button
+									onClick={() => setShowDesignSystem(false)}
+									className="p-1 hover:bg-zinc-100 rounded-full text-zinc-400"
+								>
+									<X size={14} />
+								</button>
+							</div>
+
+							{/* Colors */}
+							<div className="space-y-2">
+								<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter">
+									Primary Color
+								</label>
+								<div className="flex flex-wrap gap-2">
+									{THEMES.map((t) => (
+										<button
+											key={t.name}
+											onClick={() => updateDesignSystem({ color: t.color })}
+											className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${designSystem.color === t.color ? "border-zinc-900 shadow-lg" : "border-transparent"}`}
+											style={{ backgroundColor: t.color }}
+											title={t.name}
+										/>
+									))}
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								{/* Fonts */}
+								<div className="space-y-2">
+									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
+										Font Family
+									</label>
+									<select
+										value={designSystem.font}
+										onChange={(e) =>
+											updateDesignSystem({ font: e.target.value })
+										}
+										className="w-full text-[10px] p-2 bg-zinc-50 border border-zinc-100 rounded-xl focus:outline-none"
+									>
+										{FONTS.map((f) => (
+											<option key={f} value={f}>
+												{f}
+											</option>
+										))}
+									</select>
+								</div>
+
+								{/* Radius */}
+								<div className="space-y-2">
+									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
+										Corner Radius
+									</label>
+									<div className="flex bg-zinc-50 p-1 rounded-xl border border-zinc-100">
+										{RADII.map((r) => (
+											<button
+												key={r.name}
+												onClick={() => updateDesignSystem({ radius: r.value })}
+												className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.radius === r.value ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+											>
+												{r.name.charAt(0)}
+											</button>
+										))}
+									</div>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4">
+								{/* Mode */}
+								<div className="space-y-2">
+									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
+										Theme Mode
+									</label>
+									<div className="flex bg-zinc-50 p-1 rounded-xl border border-zinc-100">
+										<button
+											onClick={() => updateDesignSystem({ mode: "light" })}
+											className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.mode === "light" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+										>
+											Light
+										</button>
+										<button
+											onClick={() => updateDesignSystem({ mode: "dark" })}
+											className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.mode === "dark" ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+										>
+											Dark
+										</button>
+									</div>
+								</div>
+
+								{/* Stroke */}
+								<div className="space-y-2">
+									<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
+										Stroke Width
+									</label>
+									<div className="flex bg-zinc-50 p-1 rounded-xl border border-zinc-100">
+										{STROKES.map((s) => (
+											<button
+												key={s.name}
+												onClick={() => updateDesignSystem({ stroke: s.value })}
+												className={`flex-1 py-1 text-[9px] font-bold rounded-lg transition-all ${designSystem.stroke === s.value ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+											>
+												{s.name.charAt(0)}
+											</button>
+										))}
+									</div>
+								</div>
+							</div>
+
+							{/* Design Variants */}
+							<div className="space-y-2 pt-2 border-t border-zinc-100">
+								<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
+									Design Style (Variants)
+								</label>
+								<div className="grid grid-cols-2 gap-2">
+									{DESIGN_VARIANTS.map((v) => (
+										<button
+											key={v}
+											onClick={() => {
+												if (!selectedSlug) {
+													toast.error("Please select a page first");
+													return;
+												}
+												onGenerateVariant(
+													selectedSlug,
+													pages[selectedSlug],
+													v,
+													designSystem,
+												);
+											}}
+											className="px-3 py-2 text-[10px] font-bold bg-zinc-50 border border-zinc-50 rounded-xl hover:bg-zinc-100 hover:text-black transition-all text-left group flex items-center justify-between"
+										>
+											{v}
+											<Sparkles
+												size={10}
+												className="opacity-0 group-hover:opacity-100 transition-opacity"
+											/>
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
@@ -360,9 +537,9 @@ const CanvasControls = ({
 				<div className="w-px h-4 bg-zinc-200 mx-1" />
 
 				<button
-					onClick={() => setShowThemes(!showThemes)}
-					className={`p-2 rounded-full transition-all ${showThemes ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
-					title="Change Theme"
+					onClick={() => setShowDesignSystem(!showDesignSystem)}
+					className={`p-2 rounded-full transition-all ${showDesignSystem ? "bg-zinc-100 text-zinc-900" : "text-zinc-400 hover:text-zinc-600"}`}
+					title="Design System"
 				>
 					<Palette size={16} />
 				</button>
@@ -428,9 +605,10 @@ const CanvasControls = ({
 const PageFrame = ({
 	slug,
 	html,
-	applyTheme,
+	designSystem,
 	activeTool,
 	dimensions,
+	applyThemeToHtml,
 	isGenerating,
 }) => {
 	const iframeRef = useRef(null);
@@ -438,14 +616,14 @@ const PageFrame = ({
 
 	useEffect(() => {
 		if (iframeRef.current) {
-			const themeHtml = applyTheme(html, slug);
+			const themeHtml = applyThemeToHtml(designSystem, html, slug);
 			// Only update srcDoc if the HTML is fundamentally different (not a local DOM edit)
 			if (lastHtmlRef.current !== themeHtml) {
 				iframeRef.current.srcdoc = themeHtml;
 				lastHtmlRef.current = themeHtml;
 			}
 		}
-	}, [html, slug, applyTheme]);
+	}, [html, slug, designSystem, applyThemeToHtml]);
 
 	useEffect(() => {
 		iframeRef.current?.contentWindow?.postMessage(
@@ -486,33 +664,31 @@ const PageFrame = ({
 	);
 };
 
-const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
+const SimbaCanvas = ({
+	pages,
+	setPages,
+	isGenerating,
+	editingSlug,
+	activeTool,
+	activeTheme,
+	setActiveTool,
+	selectedElement,
+	setSelectedElement,
+	handleDeleteElement,
+	undo,
+	designSystem,
+	setDesignSystem,
+	selectedSlug,
+	setSelectedSlug,
+	onGenerateVariant,
+}) => {
 	const [currentScale, setCurrentScale] = useState(0.7);
 	const [viewMode, setViewMode] = useState("mobile");
-	const [activeTheme, setActiveTheme] = useState(THEMES[0]);
-	const [selectedSlug, setSelectedSlug] = useState(null);
 	const [renamingSlug, setRenamingSlug] = useState(null);
 	const [activeDropdown, setActiveDropdown] = useState(null);
-	const [activeTool, setActiveTool] = useState("hand");
 	const [hoveredElement, setHoveredElement] = useState(null);
-	const [selectedElement, setSelectedElement] = useState(null);
-	const [history, setHistory] = useState([]);
 
 	const pageSlugs = useMemo(() => Object.keys(pages), [pages]);
-
-	const addToHistory = (currentPages) => {
-		setHistory((prev) => [currentPages, ...prev].slice(0, 5));
-	};
-
-	const undo = () => {
-		if (history.length > 0) {
-			const [previousState, ...remainingHistory] = history;
-			setHistory(remainingHistory);
-			setPages(previousState);
-			setSelectedElement(null);
-			toast.success("Undo successful!");
-		}
-	};
 
 	useEffect(() => {
 		const handleKeyDown = (e) => {
@@ -524,7 +700,7 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [history, pages]); // Need history and pages to have latest values in closure
+	}, [undo]);
 
 	useEffect(() => {
 		const handleMessage = (e) => {
@@ -541,7 +717,7 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 
 		window.addEventListener("message", handleMessage);
 		return () => window.removeEventListener("message", handleMessage);
-	}, []);
+	}, [setSelectedElement]);
 
 	useEffect(() => {
 		// Update active tool in all iframes
@@ -560,15 +736,47 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 			: { width: 320, height: 640, radius: 32 };
 	}, [viewMode]);
 
-	const applyThemeToHtml = (html, slug) => {
+	const applyThemeToHtml = (designSystem, html, slug) => {
 		if (!html) return "";
 		const themeStyle = `
 			<style>
-				:root { --primary: ${activeTheme.color}; }
-				/* Override common Tailwind indigo classes with theme color */
-				[class*="text-indigo-"], [class*="text-blue-"] { color: ${activeTheme.color} !important; }
-				[class*="bg-indigo-"], [class*="bg-blue-"] { background-color: ${activeTheme.color} !important; }
-				[class*="border-indigo-"], [class*="border-blue-"] { border-color: ${activeTheme.color} !important; }
+
+				
+				:root { 
+					--primary: ${designSystem?.color}; 
+					--radius: ${designSystem?.radius};
+					--stroke: ${designSystem?.stroke};
+				}
+
+				body {
+					font-family: '${designSystem?.font}', sans-serif !important;
+					background-color: ${designSystem?.mode === "dark" ? "#09090b" : "#ffffff"} !important;
+					color: ${designSystem?.mode === "dark" ? "#ffffff" : "#09090b"} !important;
+				}
+
+				/* Universal Color Overrides */
+				[class*="text-indigo-"], [class*="text-blue-"], [class*="text-zinc-900"], [class*="text-gray-900"] { 
+					color: ${designSystem?.color} !important; 
+				}
+				
+				[class*="bg-indigo-"], [class*="bg-blue-"], [class*="bg-zinc-900"], [class*="bg-gray-900"] { 
+					background-color: ${designSystem?.color} !important; 
+				}
+				
+				[class*="border-indigo-"], [class*="border-blue-"], [class*="border-zinc-900"] { 
+					border-color: ${designSystem?.color} !important; 
+				}
+
+				/* Rounded Corners Override */
+				[class*="rounded-"], button, img, input, .card, div[class*="bg-"] {
+					border-radius: ${designSystem?.radius} !important;
+				}
+
+				/* Stroke Width Override */
+				[class*="border-"] {
+					border-width: ${designSystem?.stroke} !important;
+				}
+
 				button:hover { opacity: 0.9; }
 
 				.simba-hover-outline {
@@ -579,6 +787,18 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 				.simba-selected-outline {
 					outline: 2px solid #3b82f6 !important;
 					outline-offset: -2px !important;
+				}
+
+				${
+					designSystem?.mode === "dark"
+						? `
+					/* Dark Mode Surgical Overrides */
+					body { background-color: #09090b !important; color: #fafafa !important; }
+					.bg-white, .bg-zinc-50, .bg-gray-50 { background-color: #18181b !important; }
+					.text-gray-600, .text-zinc-600, .text-gray-500 { color: #a1a1aa !important; }
+					.border-zinc-100, .border-gray-100, .border-zinc-200 { border-color: #27272a !important; }
+				`
+						: ""
 				}
 			</style>
 			<script>
@@ -694,7 +914,6 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 	};
 
 	const handleDelete = (slug) => {
-		addToHistory(pages);
 		const newData = { ...pages };
 		delete newData[slug];
 		setPages(newData);
@@ -702,159 +921,9 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 	};
 
 	const handleDuplicate = (slug) => {
-		addToHistory(pages);
 		const newSlug = `${slug}-copy-${Date.now()}`;
 		setPages({ ...pages, [newSlug]: pages[slug] });
 		setActiveDropdown(null);
-	};
-
-	const getElementPath = (el) => {
-		const path = [];
-		let current = el;
-		while (current && current.parentElement && current.tagName !== "BODY") {
-			let index = 1;
-			let sibling = current.previousElementSibling;
-			while (sibling) {
-				if (sibling.tagName === current.tagName) index++;
-				sibling = sibling.previousElementSibling;
-			}
-			path.unshift(
-				current.tagName.toLowerCase() + ":nth-of-type(" + index + ")",
-			);
-			current = current.parentElement;
-		}
-		return path.join(" > ");
-	};
-
-	const handleUpdateElement = (slug, path, updates, shouldClose = true) => {
-		addToHistory(pages);
-		const iframes = document.querySelectorAll("iframe");
-		const targetIframe = Array.from(iframes).find((f) => f.title === slug);
-
-		setPages((prev) => {
-			const html = prev[slug];
-			const parser = new DOMParser();
-			const doc = parser.parseFromString(html, "text/html");
-			let el = doc.querySelector(path);
-			let newPath = path;
-
-			if (el) {
-				if (updates.text !== undefined) el.innerText = updates.text;
-				if (updates.html !== undefined) {
-					if (updates.replace || el.tagName.toLowerCase() === "svg") {
-						const parent = el.parentElement;
-						const index = Array.from(parent.children).indexOf(el);
-						el.outerHTML = updates.html;
-						el = parent.children[index];
-						if (el) newPath = getElementPath(el);
-					} else {
-						el.innerHTML = updates.html;
-					}
-				}
-				if (updates.src !== undefined && el) el.src = updates.src;
-				if (updates.style !== undefined && el) {
-					Object.keys(updates.style).forEach((key) => {
-						el.style.setProperty(key, updates.style[key], "important");
-						if (el.tagName.toLowerCase() === "svg" && key === "color") {
-							el.style.setProperty("stroke", updates.style[key], "important");
-						}
-					});
-				}
-
-				const newHtml = doc.documentElement.outerHTML;
-
-				// Direct DOM update in iframe to avoid reload
-				if (targetIframe && targetIframe.contentDocument) {
-					let iframeEl = targetIframe.contentDocument.querySelector(path);
-					if (iframeEl) {
-						if (updates.text !== undefined) iframeEl.innerText = updates.text;
-						if (updates.html !== undefined) {
-							if (updates.replace || iframeEl.tagName.toLowerCase() === "svg") {
-								const parent = iframeEl.parentElement;
-								const index = Array.from(parent.children).indexOf(iframeEl);
-								iframeEl.outerHTML = updates.html;
-								iframeEl = parent.children[index];
-							} else {
-								iframeEl.innerHTML = updates.html;
-							}
-						}
-						if (updates.src !== undefined && iframeEl)
-							iframeEl.src = updates.src;
-						if (updates.style !== undefined && iframeEl) {
-							Object.keys(updates.style).forEach((key) => {
-								iframeEl.style.setProperty(
-									key,
-									updates.style[key],
-									"important",
-								);
-								if (
-									iframeEl.tagName.toLowerCase() === "svg" &&
-									key === "color"
-								) {
-									iframeEl.style.setProperty(
-										"stroke",
-										updates.style[key],
-										"important",
-									);
-								}
-							});
-						}
-
-						// Update the selected element's rect and info in our state
-						if (iframeEl) {
-							const newRect = iframeEl.getBoundingClientRect();
-							setSelectedElement((curr) => {
-								if (!curr || curr.slug !== slug || curr.path !== path)
-									return curr;
-								return {
-									...curr,
-									path: newPath,
-									rect: {
-										top: newRect.top,
-										left: newRect.left,
-										width: newRect.width,
-										height: newRect.height,
-									},
-									info: {
-										...curr.info,
-										text: updates.text ?? curr.info.text,
-										src: updates.src ?? curr.info.src,
-										html: updates.html ?? curr.info.html,
-										tagName: iframeEl.tagName.toLowerCase(),
-									},
-								};
-							});
-						}
-					}
-				}
-
-				return { ...prev, [slug]: newHtml };
-			}
-			return prev;
-		});
-
-		if (shouldClose) {
-			setSelectedElement(null);
-		}
-		toast.success("Element updated!");
-	};
-
-	const handleDeleteElement = (slug, path) => {
-		addToHistory(pages);
-		setPages((prev) => {
-			const html = prev[slug];
-			const parser = new DOMParser();
-			const doc = parser.parseFromString(html, "text/html");
-			const el = doc.querySelector(path);
-			if (el) {
-				el.remove();
-				const newHtml = doc.documentElement.outerHTML;
-				return { ...prev, [slug]: newHtml };
-			}
-			return prev;
-		});
-		setSelectedElement(null);
-		toast.success("Element deleted!");
 	};
 
 	return (
@@ -863,6 +932,7 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 			onClick={() => {
 				setSelectedSlug(null);
 				setActiveDropdown(null);
+				setSelectedElement(null);
 			}}
 		>
 			<TransformWrapper
@@ -879,10 +949,12 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 							pages={pages}
 							viewMode={viewMode}
 							setViewMode={setViewMode}
-							activeTheme={activeTheme}
-							setTheme={setActiveTheme}
+							designSystem={designSystem}
+							setDesignSystem={setDesignSystem}
 							activeTool={activeTool}
 							setActiveTool={setActiveTool}
+							selectedSlug={selectedSlug}
+							onGenerateVariant={onGenerateVariant}
 						/>
 						<TransformComponent
 							wrapperStyle={{ width: "100%", height: "100%" }}
@@ -933,7 +1005,6 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 														onBlur={(e) => {
 															const newTitle = e.target.value;
 															if (newTitle && newTitle !== slug) {
-																addToHistory(pages);
 																const newData = { ...pages };
 																newData[newTitle] = newData[slug];
 																delete newData[slug];
@@ -1024,7 +1095,8 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 											<PageFrame
 												slug={slug}
 												html={pages[slug]}
-												applyTheme={applyThemeToHtml}
+												designSystem={designSystem}
+												applyThemeToHtml={applyThemeToHtml}
 												activeTool={activeTool}
 												dimensions={frameDimensions}
 												isGenerating={editingSlug === slug}
@@ -1049,36 +1121,19 @@ const SimbaCanvas = ({ pages, setPages, isGenerating, editingSlug }) => {
 													</div>
 												)}
 
-											{/* Selection Overlay & Toolbar */}
+											{/* Selection Overlay */}
 											{activeTool === "cursor" &&
 												selectedElement &&
 												selectedElement.slug === slug && (
-													<>
-														<div
-															className="absolute pointer-events-none border-2 border-blue-600 z-40"
-															style={{
-																top: selectedElement.rect.top,
-																left: selectedElement.rect.left,
-																width: selectedElement.rect.width,
-																height: selectedElement.rect.height,
-															}}
-														/>
-														<SelectionToolbar
-															element={selectedElement}
-															onUpdate={(updates, shouldClose = true) =>
-																handleUpdateElement(
-																	slug,
-																	selectedElement.path,
-																	updates,
-																	shouldClose,
-																)
-															}
-															onDelete={() =>
-																handleDeleteElement(slug, selectedElement.path)
-															}
-															onClose={() => setSelectedElement(null)}
-														/>
-													</>
+													<div
+														className="absolute pointer-events-none border-2 border-blue-600 z-40"
+														style={{
+															top: selectedElement.rect.top,
+															left: selectedElement.rect.left,
+															width: selectedElement.rect.width,
+															height: selectedElement.rect.height,
+														}}
+													/>
 												)}
 
 											{selectedSlug === slug && (

@@ -448,9 +448,9 @@ export default function DocsPage() {
 					keys: ["title", "content"],
 					threshold: 0.3,
 					includeScore: true,
-				}
+				},
 			),
-		[]
+		[],
 	);
 
 	// Handle search
@@ -548,7 +548,7 @@ export default function DocsPage() {
 					`# ${
 						DOC_SECTIONS.find((s) => s.id === activeSection)?.title ||
 						"Documentation"
-					}\n\nContent not available.`
+					}\n\nContent not available.`,
 				);
 				toast.error("Failed to load documentation");
 			} finally {
@@ -609,7 +609,7 @@ export default function DocsPage() {
 					) {
 						foundCode = true;
 						functionName = String(
-							item.props?.children || item.children || ""
+							item.props?.children || item.children || "",
 						).trim();
 
 						// Look for description after colon in next items
@@ -712,7 +712,7 @@ export default function DocsPage() {
 				<div className="flex items-center gap-2">
 					<RocketIcon className="w-5 h-5 text-zinc-900 dark:text-zinc-100" />
 					<h1 className="text-md font-bold text-zinc-900 dark:text-zinc-100 font-mono">
-						SAAS Starter
+						Kixi
 					</h1>
 				</div>
 				{/* Theme Toggle Button */}
@@ -746,7 +746,7 @@ export default function DocsPage() {
 						const CategoryIcon = category.icon;
 						const isExpanded = expandedCategories[category.id];
 						const hasActiveSection = category.sections.some(
-							(s) => s.id === activeSection
+							(s) => s.id === activeSection,
 						);
 
 						return (
@@ -809,35 +809,35 @@ export default function DocsPage() {
 						);
 					})}
 				</div>
-			{/* Buy Now Card */}
-			<div className="p-3 ">
-				<a
-					href="https://buildsaas.dev"
-					target="_blank"
-					rel="noopener noreferrer"
-					className="block"
-				>
-					<motion.div
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						className="bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-200 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700 shadow-lg hover:shadow-xl transition-all"
+				{/* Buy Now Card */}
+				<div className="p-3 ">
+					<a
+						href="https://buildsaas.dev"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="block"
 					>
-						<div className="flex items-center gap-2 mb-2">
-							<ShoppingCart className="w-4 h-4 text-white dark:text-zinc-900" />
-							<h3 className="text-sm font-bold text-white dark:text-zinc-900 font-mono">
-								Buy SAAS Starter
-							</h3>
-						</div>
-						<p className="text-xs text-zinc-300 dark:text-zinc-700 mb-3 leading-relaxed">
-							Easiest way to Build your SaaS Application
-						</p>
-						<div className="flex items-center gap-1.5 text-xs font-medium text-white dark:text-zinc-900">
-							<span>Buy Now</span>
-							<ExternalLink className="w-3 h-3" />
-						</div>
-					</motion.div>
-				</a>
-			</div>
+						<motion.div
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
+							className="bg-gradient-to-br from-zinc-900 to-zinc-800 dark:from-zinc-100 dark:to-zinc-200 rounded-xl p-4 border border-zinc-200 dark:border-zinc-700 shadow-lg hover:shadow-xl transition-all"
+						>
+							<div className="flex items-center gap-2 mb-2">
+								<ShoppingCart className="w-4 h-4 text-white dark:text-zinc-900" />
+								<h3 className="text-sm font-bold text-white dark:text-zinc-900 font-mono">
+									Buy Kixi
+								</h3>
+							</div>
+							<p className="text-xs text-zinc-300 dark:text-zinc-700 mb-3 leading-relaxed">
+								Easiest way to Build your SaaS Application
+							</p>
+							<div className="flex items-center gap-1.5 text-xs font-medium text-white dark:text-zinc-900">
+								<span>Buy Now</span>
+								<ExternalLink className="w-3 h-3" />
+							</div>
+						</motion.div>
+					</a>
+				</div>
 			</nav>
 		</>
 	);
@@ -880,7 +880,7 @@ export default function DocsPage() {
 								<div className="flex items-center gap-2">
 									<RocketIcon className="w-5 h-5 text-zinc-900 dark:text-zinc-100" />
 									<h1 className="text-md font-bold text-zinc-900 dark:text-zinc-100 font-mono">
-										SAAS Starter
+										Kixi
 									</h1>
 								</div>
 								<motion.button
@@ -973,7 +973,7 @@ export default function DocsPage() {
 											h1: ({ node, children, ...props }) => {
 												const text = String(children);
 												const heading = tableOfContents?.find(
-													(h) => h.text === text && h.level === 1
+													(h) => h.text === text && h.level === 1,
 												);
 												const id =
 													heading?.id ||
@@ -994,7 +994,7 @@ export default function DocsPage() {
 											h2: ({ node, children, ...props }) => {
 												const text = String(children);
 												const heading = tableOfContents?.find(
-													(h) => h.text === text && h.level === 2
+													(h) => h.text === text && h.level === 2,
 												);
 												const id =
 													heading?.id ||
@@ -1015,7 +1015,7 @@ export default function DocsPage() {
 											h3: ({ node, children, ...props }) => {
 												const text = String(children);
 												const heading = tableOfContents?.find(
-													(h) => h.text === text && h.level === 3
+													(h) => h.text === text && h.level === 3,
 												);
 												const id =
 													heading?.id ||
@@ -1036,7 +1036,7 @@ export default function DocsPage() {
 											h4: ({ node, children, ...props }) => {
 												const text = String(children);
 												const heading = tableOfContents?.find(
-													(h) => h.text === text && h.level === 4
+													(h) => h.text === text && h.level === 4,
 												);
 												const id =
 													heading?.id ||

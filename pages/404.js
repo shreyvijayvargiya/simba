@@ -5,7 +5,7 @@ import SEO from "../lib/modules/SEO";
 export default function Custom404() {
 	// Use custom SEO for 404 page
 	const customSEO = {
-		title: "404 - Page Not Found - SAAS Starter",
+		title: "404 - Page Not Found - Kixi",
 		description: "The page you are looking for does not exist.",
 		keywords: "404, page not found, error",
 		ogImage: "/og-default.png",
@@ -36,4 +36,3 @@ export default function Custom404() {
 		</>
 	);
 }
-

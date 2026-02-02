@@ -1,7 +1,7 @@
 {
 	"name": "saas-starter-boilerplate",
 	"version": "1.0.0",
-	"description": "SAAS starter boilerplate",
+	"description": "Kixi boilerplate",
 	"main": "pages/index.js",
 	"repository": "https://github.com/shreyvijayvargiya/profiler",
 	"author": "shreyvijayvargiya",
