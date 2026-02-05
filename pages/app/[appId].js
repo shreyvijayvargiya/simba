@@ -84,6 +84,8 @@ export default function AppByIdPage() {
 		<AIDesignCreatorPage
 			initialPages={app.pages || {}}
 			initialMeta={app.meta ?? null}
+			initialSummary={app.summary ?? null}
+			initialNextUpdates={app.next_updates ?? null}
 			initialDesignSystem={app.designSystem ?? null}
 			appId={appId}
 			userId={user.uid}

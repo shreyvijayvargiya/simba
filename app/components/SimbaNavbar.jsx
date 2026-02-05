@@ -25,15 +25,15 @@ const SimbaNavbar = ({
 
 	return (
 		<>
-			<nav className="h-12 border-b border-zinc-100 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md sticky top-0 z-50">
+			<nav className="h-10 border-b border-zinc-100 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md sticky top-0 z-50">
 				<div
-					className="flex items-center gap-2 cursor-pointer"
+					className="flex items-center cursor-pointer"
 					onClick={() => router.push("/")}
 				>
-					<div className="w-8 h-8 bg-zinc-100 rounded-xl flex items-center justify-center">
-						<Dog size={18} className="text-zinc-900" />
+					<div className="w-4 h-4 rounded-xl flex items-center justify-center">
+						<Dog size={16} className="text-zinc-900" />
 					</div>
-					<span className="font-black text-xl tracking-tighter text-zinc-900">
+					<span className="font-black tracking-tighter text-zinc-900">
 						SIMBA
 					</span>
 				</div>
@@ -46,7 +46,7 @@ const SimbaNavbar = ({
 					</button>
 					<button
 						onClick={() => setIsLoginModalOpen(true)}
-						className="flex items-center gap-2 px-4 py-2 bg-zinc-100 text-black rounded-full text-sm font-bold hover:bg-zinc-200 transition-all active:scale-95"
+						className="flex items-center gap-2 px-2 py-1 bg-zinc-100 text-zinc-800 rounded-full text-sm hover:bg-zinc-200 transition-all active:scale-95"
 					>
 						{user ? (
 							<>
@@ -54,10 +54,10 @@ const SimbaNavbar = ({
 									<img
 										src={user.photoURL}
 										alt={user.displayName}
-										className="w-5 h-5 rounded-full"
+										className="w-3 h-3 rounded-full"
 									/>
 								) : (
-									<UserIcon size={16} />
+									<UserIcon size={14} />
 								)}
 								Account
 							</>

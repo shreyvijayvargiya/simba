@@ -10,7 +10,6 @@ import {
 	ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import useSimba from "../lib/hooks/useSimba";
 import { onAuthStateChange } from "../lib/api/auth";
@@ -23,13 +22,14 @@ const HomePage = () => {
 	const [input, setInput] = useState("");
 	const [user, setUser] = useState(null);
 	const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-	const { generate, pages, setPages, isGenerating, logs } = useSimba();
+	const { generate, pages, isGenerating, logs, getTemplates } = useSimba();
 	const textareaRef = useRef(null);
 	const router = useRouter();
 	const [selectedDesignSystem, setSelectedDesignSystem] = useState(
 		DESIGN_SYSTEMS[0],
 	);
 	const [showLoginModal, setShowLoginModal] = useState(false);
+	const [templates, setTemplates] = useState([]);
 
 	useEffect(() => {
 		const unsub = onAuthStateChange((u) => {
@@ -37,6 +37,16 @@ const HomePage = () => {
 			setIsCheckingAuth(false);
 		});
 		return () => unsub?.();
+	}, []);
+
+	useEffect(() => {
+		const fetchTemplates = async () => {
+			const templates = await getTemplates();
+			if (templates) {
+				setTemplates(templates);
+			}
+		};
+		fetchTemplates();
 	}, []);
 
 	const handleSend = async () => {
@@ -64,6 +74,8 @@ const HomePage = () => {
 					name: prompt.slice(0, 80) || "Untitled App",
 					pages: result.pages,
 					meta: result.meta ?? null,
+					summary: result.summary ?? null,
+					next_updates: result.next_updates ?? null,
 					designSystem: selectedDesignSystem,
 				});
 				router.push(`/app/${appId}`);
@@ -107,10 +119,7 @@ const HomePage = () => {
 
 				<main className="flex-1 relative flex flex-col overflow-hidden">
 					<div className="flex-1 flex flex-col items-center justify-center p-6 relative">
-						{/* Hero Background Glow */}
-						<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-zinc-100 rounded-full blur-[120px] opacity-50 pointer-events-none" />
-
-						<div className="w-full max-w-3xl flex flex-col items-center gap-8 relative z-10">
+						<div className="w-full max-w-2xl flex flex-col items-center gap-8 relative z-10">
 							<motion.div
 								initial={{ opacity: 0, y: 20 }}
 								animate={{ opacity: 1, y: 0 }}
@@ -118,7 +127,7 @@ const HomePage = () => {
 							>
 								<h1 className="text-5xl sm:text-7xl font-black tracking-tight text-zinc-900 leading-[0.9]">
 									Build your next app <br />
-									<span className="text-zinc-400">with Simba.</span>
+									<span className="text-zinc-400">with Kixi.</span>
 								</h1>
 								<p className="text-lg text-zinc-500 font-medium max-w-xl mx-auto">
 									Describe your idea, and let Simba generate a complete,
@@ -133,43 +142,43 @@ const HomePage = () => {
 								className="w-full relative group"
 							>
 								<div className="absolute -inset-1 bg-gradient-to-r from-zinc-200 to-zinc-100 rounded-[32px] blur opacity-25 group-focus-within:opacity-50 transition duration-1000 group-focus-within:duration-200" />
-								<div className="relative bg-white border border-zinc-200 rounded-[28px] p-2 shadow-2xl shadow-zinc-200/50">
+								<div className="relative bg-white border border-zinc-200 border-dashed ring-4 ring-zinc-100/50 rounded-[28px] p-2 shadow-2xl shadow-zinc-200/50">
 									<textarea
 										ref={textareaRef}
 										value={input}
 										onChange={(e) => setInput(e.target.value)}
 										onKeyDown={handleKeyDown}
 										placeholder="Describe a dashboard, landing page, or mobile app..."
-										className="w-full px-6 py-6 text-lg text-zinc-900 placeholder:text-zinc-400 bg-transparent border-none focus:outline-none focus:ring-0 resize-none min-h-[140px] transition-all"
+										className="w-full p-4 rounded-2xl text-lg text-zinc-900 placeholder:text-zinc-400  focus:border-zinc-100 focus:border-dashed focus:border focus:bg-zinc-50 focus:outline-none focus:ring-0 resize-none min-h-[140px] transition-all"
 										disabled={isGenerating}
 									/>
-									<div className="flex items-center justify-between px-4 pb-4 pt-2">
+									<div className="flex items-center justify-between p-1">
 										<div className="flex gap-2">
 											<button className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl transition-all">
-												<ImageIcon size={20} />
+												<ImageIcon size={18} />
 											</button>
 											<button className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl transition-all">
-												<Palette size={20} />
+												<Palette size={18} />
 											</button>
 											<button className="p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 rounded-xl transition-all">
-												<Layout size={20} />
+												<Layout size={18} />
 											</button>
 										</div>
 										<button
 											onClick={handleSend}
 											disabled={!input.trim() || isGenerating}
-											className="group flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 disabled:opacity-50 transition-all active:scale-95 shadow-xl shadow-zinc-900/20"
+											className="group flex items-center text-sm p-2 bg-zinc-700 text-white rounded-xl font-bold hover:bg-zinc-980 disabled:opacity-50 transition-all active:scale-95 shadow-xl shadow-zinc-900/20"
 										>
 											{isGenerating ? (
 												<>
-													<Loader2 size={18} className="animate-spin" />
+													<Loader2 size={14} className="animate-spin" />
 													Generating...
 												</>
 											) : (
 												<>
 													Generate Design
 													<ArrowRight
-														size={18}
+														size={14}
 														className="group-hover:translate-x-1 transition-transform"
 													/>
 												</>
@@ -202,7 +211,7 @@ const HomePage = () => {
 											}`}
 										>
 											<span
-												className="w-3 h-3 rounded-full shrink-0"
+												className="w-2 h-2 rounded-full shrink-0"
 												style={{ backgroundColor: ds.color }}
 											/>
 											{ds.name}
@@ -212,7 +221,7 @@ const HomePage = () => {
 							</motion.div>
 
 							{/* Suggestions */}
-							<div className="flex flex-wrap items-center justify-center gap-2">
+							<div className="flex items-center justify-center gap-2">
 								{[
 									"SaaS Analytics Dashboard",
 									"Modern E-commerce Landing",
@@ -228,6 +237,18 @@ const HomePage = () => {
 									</button>
 								))}
 							</div>
+						</div>
+
+						<div className="grid grid-cols-3 items-center justify-center gap-2 my-4">
+							{templates.map((template) => (
+								<div key={template.id} className="flex flex-col gap-2">
+									<iframe
+										className="w-full h-60 aspect-square object-contain border border-zinc-100 rounded-2xl overflow-hidden"
+										srcDoc={template.code}
+									></iframe>
+									<h3>{template.name}</h3>
+								</div>
+							))}
 						</div>
 					</div>
 

@@ -59,9 +59,9 @@ const DesignPropertiesSidebar = ({ element, onUpdate, onDelete, onClose }) => {
 	const fileInputRef = useRef(null);
 
 	useEffect(() => {
-		if (element) {
-			// In a real app, we'd extract current styles from the element
-			// For now, we'll manage them as an object
+		if (element && element.info && element.info.style) {
+			setLocalStyles(element.info.style);
+		} else {
 			setLocalStyles({});
 		}
 	}, [element]);
@@ -71,6 +71,7 @@ const DesignPropertiesSidebar = ({ element, onUpdate, onDelete, onClose }) => {
 	const { info, slug, path } = element;
 
 	const updateStyle = (key, value) => {
+		setLocalStyles((prev) => ({ ...prev, [key]: value }));
 		onUpdate({ style: { [key]: value } }, false);
 	};
 
@@ -117,14 +118,48 @@ const DesignPropertiesSidebar = ({ element, onUpdate, onDelete, onClose }) => {
 					<div className="grid grid-cols-2 gap-2">
 						<Input
 							label="Padding"
+							value={localStyles.padding}
 							placeholder="e.g. 20px"
 							onChange={(val) => updateStyle("padding", val)}
 						/>
 						<Input
 							label="Margin"
+							value={localStyles.margin}
 							placeholder="e.g. 10px"
 							onChange={(val) => updateStyle("margin", val)}
 						/>
+						<Input
+							label="Width"
+							value={localStyles.width}
+							placeholder="e.g. 100%"
+							onChange={(val) => updateStyle("width", val)}
+						/>
+						<Input
+							label="Height"
+							value={localStyles.height}
+							placeholder="e.g. auto"
+							onChange={(val) => updateStyle("height", val)}
+						/>
+					</div>
+					<div className="flex gap-2 pt-1">
+						<button
+							onClick={() => updateStyle("width", "100%")}
+							className="flex-1 py-1 px-2 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-[9px] font-bold text-zinc-600 uppercase transition-all"
+						>
+							Full (100%)
+						</button>
+						<button
+							onClick={() => updateStyle("width", "50%")}
+							className="flex-1 py-1 px-2 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-[9px] font-bold text-zinc-600 uppercase transition-all"
+						>
+							Half (50%)
+						</button>
+						<button
+							onClick={() => updateStyle("width", "auto")}
+							className="flex-1 py-1 px-2 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-[9px] font-bold text-zinc-600 uppercase transition-all"
+						>
+							Auto
+						</button>
 					</div>
 				</PropertyGroup>
 
@@ -135,17 +170,20 @@ const DesignPropertiesSidebar = ({ element, onUpdate, onDelete, onClose }) => {
 					<PropertyGroup title="Typography" icon={Type}>
 						<Input
 							label="Font Size"
+							value={localStyles.fontSize}
 							placeholder="e.g. 16px"
 							onChange={(val) => updateStyle("fontSize", val)}
 						/>
 						<Input
 							label="Font Weight"
+							value={localStyles.fontWeight}
 							placeholder="e.g. 600"
 							onChange={(val) => updateStyle("fontWeight", val)}
 						/>
 						<Input
 							label="Text Color"
 							type="color"
+							value={localStyles.color}
 							onChange={(val) => updateStyle("color", val)}
 						/>
 					</PropertyGroup>
@@ -155,16 +193,19 @@ const DesignPropertiesSidebar = ({ element, onUpdate, onDelete, onClose }) => {
 					<Input
 						label="Background"
 						type="color"
+						value={localStyles.backgroundColor}
 						onChange={(val) => updateStyle("backgroundColor", val)}
 					/>
 					<div className="grid grid-cols-2 gap-2">
 						<Input
 							label="Radius"
+							value={localStyles.borderRadius}
 							placeholder="e.g. 12px"
 							onChange={(val) => updateStyle("borderRadius", val)}
 						/>
 						<Input
 							label="Opacity"
+							value={localStyles.opacity}
 							placeholder="e.g. 0.5"
 							onChange={(val) => updateStyle("opacity", val)}
 						/>
@@ -202,11 +243,13 @@ const DesignPropertiesSidebar = ({ element, onUpdate, onDelete, onClose }) => {
 				<PropertyGroup title="Effects" icon={Droplet}>
 					<Input
 						label="Box Shadow"
+						value={localStyles.boxShadow}
 						placeholder="e.g. 0 4px 6px rgba(0,0,0,0.1)"
 						onChange={(val) => updateStyle("boxShadow", val)}
 					/>
 					<Input
 						label="Border"
+						value={localStyles.border}
 						placeholder="e.g. 1px solid #000"
 						onChange={(val) => updateStyle("border", val)}
 					/>

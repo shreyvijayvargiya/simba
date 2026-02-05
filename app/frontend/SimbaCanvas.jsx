@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
 	MousePointer2,
 	Hand,
@@ -41,6 +41,12 @@ const THEMES = [
 	{ name: "Amber", color: "#f59e0b" },
 	{ name: "Zinc", color: "#18181b" },
 	{ name: "Sky", color: "#0ea5e9" },
+	{ name: "Violet", color: "#8b5cf6" },
+	{ name: "Pink", color: "#ec4899" },
+	{ name: "Orange", color: "#f97316" },
+	{ name: "Cyan", color: "#06b6d4" },
+	{ name: "Lime", color: "#84cc16" },
+	{ name: "Slate", color: "#64748b" },
 ];
 
 const FONTS = [
@@ -358,14 +364,14 @@ const CanvasControls = ({
 	};
 
 	return (
-		<div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50 pointer-events-auto scale-110">
+		<div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50 pointer-events-auto scale-110">
 			<AnimatePresence>
 				{showDesignSystem && (
 					<motion.div
 						initial={{ opacity: 0, y: 10, scale: 0.95 }}
 						animate={{ opacity: 1, y: 0, scale: 1 }}
 						exit={{ opacity: 0, y: 10, scale: 0.95 }}
-						className="bg-white/95 backdrop-blur-md border border-zinc-200 rounded-3xl p-4 shadow-2xl mb-4 w-[400px] space-y-4"
+						className="bg-white/95 backdrop-blur-md border border-zinc-200 rounded-3xl p-4 shadow-2xl mb-2 w-[400px] space-y-4"
 					>
 						<div className="space-y-3">
 							<div className="flex items-center justify-between">
@@ -390,7 +396,7 @@ const CanvasControls = ({
 										<button
 											key={t.name}
 											onClick={() => updateDesignSystem({ color: t.color })}
-											className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${designSystem.color === t.color ? "border-zinc-900 shadow-lg" : "border-transparent"}`}
+											className={`w-4 h-4 rounded-full border-2 transition-transform hover:scale-110 ${designSystem.color === t.color ? "border-zinc-900 shadow-lg" : "border-transparent"}`}
 											style={{ backgroundColor: t.color }}
 											title={t.name}
 										/>
@@ -398,14 +404,12 @@ const CanvasControls = ({
 								</div>
 							</div>
 
-						
-							
 							{/* Design Variants */}
 							<div className="space-y-2 pt-2 border-t border-zinc-100">
 								<label className="text-[9px] font-bold text-zinc-400 uppercase tracking-tighter text-left block">
 									Design Style (Variants)
 								</label>
-								<div className="grid grid-cols-2 gap-2">
+								<div className="grid grid-cols-4 gap-2">
 									{DESIGN_VARIANTS.map((v) => (
 										<button
 											key={v}
@@ -421,7 +425,7 @@ const CanvasControls = ({
 													designSystem,
 												);
 											}}
-											className="px-3 py-2 text-[10px] font-bold bg-zinc-50 border border-zinc-50 rounded-xl hover:bg-zinc-100 hover:text-black transition-all text-left group flex items-center justify-between"
+											className="p-2 text-[10px] bg-zinc-50 border border-zinc-50 rounded-xl hover:bg-zinc-100 hover:text-black transition-all text-left group flex items-center justify-between"
 										>
 											{v}
 											<Sparkles
@@ -531,15 +535,45 @@ const PageFrame = ({
 	dimensions,
 	applyThemeToHtml,
 	isGenerating,
+	majorVersion,
 }) => {
 	const iframeRef = useRef(null);
+	const lastMajorVersionRef = useRef(majorVersion);
+	const lastDesignSystemRef = useRef(designSystem);
+	const lastSlugRef = useRef(slug);
 
 	useEffect(() => {
 		if (!iframeRef.current || !html) return;
-		const themeHtml = applyThemeToHtml(designSystem, html, slug);
-		// Always apply theme so color/design system changes and HTML updates are reflected
-		iframeRef.current.srcdoc = themeHtml;
-	}, [html, slug, designSystem, applyThemeToHtml]);
+
+		const slugChanged = slug !== lastSlugRef.current;
+		const designSystemChanged =
+			JSON.stringify(designSystem) !==
+			JSON.stringify(lastDesignSystemRef.current);
+		const majorVersionChanged = majorVersion !== lastMajorVersionRef.current;
+
+		// Force reload if:
+		// 1. Slug changed (new page)
+		// 2. Design system changed (requires style re-injection)
+		// 3. Major version changed (AI generation finished, undo, etc.)
+		// 4. AI is currently generating (show live stream)
+		// 5. Initial load
+		const shouldReload =
+			slugChanged ||
+			designSystemChanged ||
+			majorVersionChanged ||
+			isGenerating ||
+			!iframeRef.current.srcdoc ||
+			iframeRef.current.srcdoc === "about:blank";
+
+		if (shouldReload) {
+			const themeHtml = applyThemeToHtml(designSystem, html, slug);
+			iframeRef.current.srcdoc = themeHtml;
+		}
+
+		lastMajorVersionRef.current = majorVersion;
+		lastDesignSystemRef.current = designSystem;
+		lastSlugRef.current = slug;
+	}, [html, slug, designSystem, isGenerating, majorVersion]);
 
 	useEffect(() => {
 		iframeRef.current?.contentWindow?.postMessage(
@@ -585,6 +619,7 @@ const SimbaCanvas = ({
 	setPages,
 	isGenerating,
 	editingSlug,
+	majorVersion,
 	activeTool,
 	activeTheme,
 	setActiveTool,
@@ -652,7 +687,7 @@ const SimbaCanvas = ({
 			: { width: 320, height: 640, radius: 32 };
 	}, [viewMode]);
 
-	const applyThemeToHtml = (designSystem, html, slug) => {
+	const applyThemeToHtml = useCallback((designSystem, html, slug) => {
 		if (!html) return "";
 		const themeStyle = `
 			<style>
@@ -765,12 +800,63 @@ const SimbaCanvas = ({
 							selectedEl.classList.add('simba-selected-outline');
 
 							const rect = el.getBoundingClientRect();
-							// Get some metadata for editing
+							const styles = window.getComputedStyle(el);
+							const rgbToHex = (rgb) => {
+								if (!rgb || rgb === "transparent") return "#ffffff";
+								const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+								if (!match) {
+									const rgbaMatch = rgb.match(
+										/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)$/,
+									);
+									if (rgbaMatch) {
+										if (parseFloat(rgbaMatch[4]) === 0) return "#ffffff";
+										return (
+											"#" +
+											(
+												(1 << 24) +
+												(parseInt(rgbaMatch[1]) << 16) +
+												(parseInt(rgbaMatch[2]) << 8) +
+												parseInt(rgbaMatch[3])
+											)
+												.toString(16)
+												.slice(1)
+										);
+									}
+									return rgb.startsWith("#") ? rgb : "#ffffff";
+								}
+								return (
+									"#" +
+									(
+										(1 << 24) +
+										(parseInt(match[1]) << 16) +
+										(parseInt(match[2]) << 8) +
+										parseInt(match[3])
+									)
+										.toString(16)
+										.slice(1)
+								);
+							};
+
 							const info = {
 								tagName: el.tagName.toLowerCase(),
 								text: el.innerText,
 								html: el.innerHTML,
-								attributes: {}
+								attributes: {},
+								style: {
+									padding: styles.padding,
+									margin: styles.margin,
+									fontSize: styles.fontSize,
+									fontWeight: styles.fontWeight,
+									color: rgbToHex(styles.color),
+									backgroundColor: rgbToHex(styles.backgroundColor),
+									borderRadius: styles.borderRadius,
+									opacity: styles.opacity,
+									boxShadow: styles.boxShadow,
+									border: styles.border,
+									width: styles.width,
+									height: styles.height,
+									display: styles.display,
+								},
 							};
 							
 							if (el.tagName === 'IMG') {
@@ -827,7 +913,7 @@ const SimbaCanvas = ({
 			return html.replace("</head>", `${themeStyle}</head>`);
 		}
 		return `<!DOCTYPE html><html><head>${themeStyle}</head><body>${html}</body></html>`;
-	};
+	}, []);
 
 	const handleDelete = (slug) => {
 		const newData = { ...pages };
@@ -1013,9 +1099,10 @@ const SimbaCanvas = ({
 												html={pages[slug]}
 												designSystem={designSystem}
 												applyThemeToHtml={applyThemeToHtml}
+												isGenerating={editingSlug === slug}
+												majorVersion={majorVersion}
 												activeTool={activeTool}
 												dimensions={frameDimensions}
-												isGenerating={editingSlug === slug}
 											/>
 
 											{/* Hover Overlay */}

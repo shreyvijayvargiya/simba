@@ -98,21 +98,14 @@ const AIDesignCreatorPage = ({
 	initialPages,
 	initialMeta,
 	initialDesignSystem,
+	initialSummary,
+	initialNextUpdates,
 	appId,
 	userId,
 }) => {
 	const router = useRouter();
 	const textareaRef = useRef();
-	const messagesEndRef = useRef(null);
-	const [messages, setMessages] = useState([
-		{
-			id: 1,
-			role: "assistant",
-			content:
-				'Hello! I\'m your AI design creator. Describe the design you want to create, and I\'ll generate it for you.\n\n💡 Try prompts like:\n- "A modern landing page for a tech startup"\n- "A colorful dashboard for a fitness app"\n- "A minimalist portfolio for a designer"',
-			timestamp: new Date().toISOString(),
-		},
-	]);
+
 	const [showRightSidebar, setShowRightSidebar] = useState(true);
 	const [showLeftSidebar, setShowLeftSidebar] = useState(true);
 	const [activeTool, setActiveTool] = useState("hand");
@@ -121,6 +114,7 @@ const AIDesignCreatorPage = ({
 	const [designSystem, setDesignSystem] = useState(
 		initialDesignSystem || DESIGN_SYSTEMS[0],
 	);
+	const [majorVersion, setMajorVersion] = useState(0);
 	const [selectedElement, setSelectedElement] = useState(null);
 	const [history, setHistory] = useState([]);
 	const [isSaving, setIsSaving] = useState(false);
@@ -138,6 +132,7 @@ const AIDesignCreatorPage = ({
 			const [previousState, ...remainingHistory] = history;
 			setHistory(remainingHistory);
 			setPages(previousState);
+			setMajorVersion((v) => v + 1);
 			setSelectedElement(null);
 			toast.success("Undo successful!");
 		}
@@ -192,7 +187,11 @@ const AIDesignCreatorPage = ({
 				if (updates.src !== undefined && el) el.src = updates.src;
 				if (updates.style !== undefined && el) {
 					Object.keys(updates.style).forEach((key) => {
-						el.style.setProperty(key, updates.style[key], "important");
+						const kebabKey = key.replace(
+							/[A-Z]/g,
+							(m) => `-${m.toLowerCase()}`,
+						);
+						el.style.setProperty(kebabKey, updates.style[key], "important");
 						if (el.tagName.toLowerCase() === "svg" && key === "color") {
 							el.style.setProperty("stroke", updates.style[key], "important");
 						}
@@ -220,8 +219,12 @@ const AIDesignCreatorPage = ({
 							iframeEl.src = updates.src;
 						if (updates.style !== undefined && iframeEl) {
 							Object.keys(updates.style).forEach((key) => {
+								const kebabKey = key.replace(
+									/[A-Z]/g,
+									(m) => `-${m.toLowerCase()}`,
+								);
 								iframeEl.style.setProperty(
-									key,
+									kebabKey,
 									updates.style[key],
 									"important",
 								);
@@ -269,6 +272,9 @@ const AIDesignCreatorPage = ({
 						src: updates.src ?? curr.info.src,
 						html: updates.html ?? curr.info.html,
 						tagName: newTagName || curr.info.tagName,
+						style: updates.style
+							? { ...curr.info.style, ...updates.style }
+							: curr.info.style,
 					},
 				};
 			});
@@ -283,6 +289,15 @@ const AIDesignCreatorPage = ({
 
 	const handleDeleteElement = (slug, path) => {
 		addToHistory(pages);
+
+		// Direct DOM removal in iframe for instant feedback and no reload
+		const iframes = document.querySelectorAll("iframe");
+		const targetIframe = Array.from(iframes).find((f) => f.title === slug);
+		if (targetIframe && targetIframe.contentDocument) {
+			const iframeEl = targetIframe.contentDocument.querySelector(path);
+			if (iframeEl) iframeEl.remove();
+		}
+
 		setPages((prev) => {
 			const html = prev[slug];
 			const parser = new DOMParser();
@@ -338,7 +353,6 @@ const AIDesignCreatorPage = ({
 	};
 	const {
 		generate,
-		edit,
 		agentEdit,
 		generateVariant,
 		pages,
@@ -424,7 +438,10 @@ const AIDesignCreatorPage = ({
 
 	// Clear generating agent ref when generation ends
 	useEffect(() => {
-		if (!isGenerating) generatingAgentIdRef.current = null;
+		if (!isGenerating) {
+			generatingAgentIdRef.current = null;
+			setMajorVersion((v) => v + 1);
+		}
 	}, [isGenerating]);
 
 	const activeAgent = agents.find((a) => a.id === activeAgentId) || agents[0];
@@ -510,14 +527,6 @@ const AIDesignCreatorPage = ({
 		}
 	};
 
-	const scrollToBottom = () => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	};
-
-	useEffect(() => {
-		scrollToBottom();
-	}, [messages]);
-
 	useEffect(() => {
 		if (textareaRef.current) {
 			textareaRef.current.style.height = "auto";
@@ -525,6 +534,7 @@ const AIDesignCreatorPage = ({
 				Math.min(textareaRef.current.scrollHeight, 220) + "px";
 		}
 	}, []);
+	console.log(initialSummary, initialNextUpdates);
 
 	return (
 		<>
@@ -541,12 +551,12 @@ const AIDesignCreatorPage = ({
 						<button
 							onClick={handleSave}
 							disabled={isSaving || Object.keys(pages).length === 0}
-							className="flex items-center gap-2 px-4 py-2 mr-4 bg-zinc-900 text-white rounded-xl text-sm font-bold hover:bg-zinc-800 disabled:opacity-50 transition-all"
+							className="flex items-center gap-2 p-1 bg-indigo-900 text-white rounded text-sm font-bold hover:bg-zinc-800 disabled:opacity-50 transition-all"
 						>
 							{isSaving ? (
-								<Loader2 size={16} className="animate-spin" />
+								<Loader2 size={12} className="animate-spin" />
 							) : (
-								<Save size={16} />
+								<Save size={12} />
 							)}
 							Save
 						</button>
@@ -786,6 +796,7 @@ const AIDesignCreatorPage = ({
 								setPages={setPages}
 								isGenerating={isGenerating}
 								editingSlug={editingSlug}
+								majorVersion={majorVersion}
 								activeTool={activeTool}
 								setActiveTool={setActiveTool}
 								selectedElement={selectedElement}
@@ -845,7 +856,7 @@ const AIDesignCreatorPage = ({
 										onClose={() => setSelectedElement(null)}
 									/>
 								) : (
-									<div className="w-96 border-l border-zinc-200 flex flex-col bg-white overflow-hidden shadow-2xl relative z-30">
+									<div className="w-96 border-l border-zinc-200 flex flex-col bg-white overflow-auto shadow-2xl relative z-30">
 										{/* Agent Tabs */}
 										<div className="flex items-center bg-zinc-50/50 border-b border-zinc-100 h-8">
 											<div className="flex-1 flex items-center overflow-x-auto hidescrollbar h-full">
@@ -946,7 +957,34 @@ const AIDesignCreatorPage = ({
 												</div>
 											)}
 										</div>
-
+										<div className="p-1 bg-white border-t border-zinc-100">
+											{initialNextUpdates && (
+												<>
+													<p className="text-[10px] mb-1 text-zinc-400">
+														Suggestions:
+													</p>
+													<div className="flex gap-1 items-center flex-nowrap overflow-auto hidescrollbar text-xs text-zinc-400">
+														{initialNextUpdates.map((item) => (
+															<div
+																key={item}
+																onClick={() =>
+																	setAgents((prev) =>
+																		prev.map((a) =>
+																			a.id === activeAgentId
+																				? { ...a, input: item }
+																				: a,
+																		),
+																	)
+																}
+																className="min-w-fit border border-zinc-50 bg-zinc-50/50 p-1 hover:bg-zinc-50 cursor-pointer rounded"
+															>
+																{item}
+															</div>
+														))}
+													</div>
+												</>
+											)}
+										</div>
 										<div className="p-4 bg-white border-t border-zinc-100">
 											<div className="relative group">
 												<textarea
