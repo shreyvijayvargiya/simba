@@ -135,9 +135,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 						>
 							{/* Header */}
 							<div className="flex items-center justify-between p-2 border-b border-zinc-200">
-								<h3 className="text-zinc-900">
-									{user ? "Account" : "Login"}
-								</h3>
+								<h3 className="text-zinc-900">{user ? "Account" : "Login"}</h3>
 								<button
 									onClick={onClose}
 									className="p-2 text-zinc-400 hover:text-zinc-600 transition-colors"
@@ -147,11 +145,11 @@ const LoginModal = ({ isOpen, onClose }) => {
 							</div>
 
 							{/* Body */}
-							<div className="pt-6">
+							<div className="">
 								{user ? (
 									// User logged in - show user details
-									<div className="space-y-4 px-6">
-										<div className="flex items-center gap-4">
+									<div className="space-y-4 p-6">
+										<div className="flex items-start flex-col gap-4">
 											{user.photoURL ? (
 												<img
 													src={user.photoURL}
@@ -178,7 +176,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 											whileTap={{ scale: 0.98 }}
 											onClick={handleLogout}
 											disabled={isLoading}
-											className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+											className="w-fit flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											<LogOut className="w-4 h-4" />
 											{isLoading ? "Logging out..." : "Logout"}
@@ -186,7 +184,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 									</div>
 								) : (
 									// Login form
-									<div className="space-y-4">
+									<div className="space-y-4 pt-6">
 										<form
 											onSubmit={handleEmailLogin}
 											className="space-y-4 px-6"

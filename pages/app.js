@@ -105,6 +105,8 @@ const AIDesignCreatorPage = ({
 }) => {
 	const router = useRouter();
 	const textareaRef = useRef();
+	const [variations, setVariations] = useState();
+	const [loading, setLoading] = useState(false);
 
 	const [showRightSidebar, setShowRightSidebar] = useState(true);
 	const [showLeftSidebar, setShowLeftSidebar] = useState(true);
@@ -505,6 +507,67 @@ const AIDesignCreatorPage = ({
 			toast.error("Failed to save project");
 		} finally {
 			setIsSaving(false);
+		}
+	};
+
+	const generateVariations = async (prompt) => {
+		setLoading(true);
+		setVariations([]);
+
+		try {
+			const response = await fetch("http://localhost:4000/simba-variations", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ prompt }),
+			});
+
+			if (!response.body) return;
+
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+			let buffer = "";
+
+			while (true) {
+				const { value, done } = await reader.read();
+				if (done) break;
+
+				// Decode the chunk and add to buffer
+				buffer += decoder.decode(value, { stream: true });
+
+				// SSE messages are separated by double newlines
+				const parts = buffer.split("\n\n");
+				buffer = parts.pop() || ""; // Keep the last partial chunk in buffer
+
+				for (const part of parts) {
+					if (!part.trim()) continue;
+
+					// Parse event and data
+					const lines = part.split("\n");
+					let eventType = "message";
+					let dataStr = "";
+
+					for (const line of lines) {
+						if (line.startsWith("event: ")) {
+							eventType = line.replace("event: ", "").trim();
+						} else if (line.startsWith("data: ")) {
+							dataStr = line.replace("data: ", "").trim();
+						}
+					}
+
+					if (dataStr) {
+						const data = JSON.parse(dataStr);
+
+						if (eventType === "variation") {
+							setVariations((prev) => [...prev, data]);
+						} else if (eventType === "done") {
+							setLoading(false);
+						}
+					}
+				}
+			}
+		} catch (err) {
+			console.error("Stream error:", err);
+			setLoading(false);
 		}
 	};
 
